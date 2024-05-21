@@ -2,3 +2,23 @@
 #
 # Documentation for this file format can be found in "The Data Catalog"
 # Link: https://docs.kedro.org/en/stable/data/data_catalog.html
+
+international_top_terms:
+  type: ibis.TableDataset
+  table_name: international_top_terms
+  connection:
+    backend: bigquery
+    project_id: aesthetic-site-421415
+    dataset_id: bigquery-public-data.google_trends
+
+international_top_rising_terms:
+  type: ibis.TableDataset
+  table_name: international_top_rising_terms
+  connection:
+    backend: bigquery
+    project_id: aesthetic-site-421415
+    dataset_id: bigquery-public-data.google_trends
+
+preprocessed_data:
+  type: pandas.CSVDataset
+  filepath: data/02_intermediate/preprocessed_data.csv
