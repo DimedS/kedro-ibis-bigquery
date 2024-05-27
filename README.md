@@ -10,21 +10,27 @@ When managing ML pipelines, especially with large datasets stored on Google BigQ
 
 ## The Solution: Kedro, Ibis, and IbisDataset
 
-### Kedro
+### Why Kedro
 
 [Kedro](https://kedro.org/) is a platform-agnostic open-source Python framework for creating reproducible, maintainable, and modular data science code. It helps in managing the entire lifecycle of your ML projects, from data ingestion to model training and deployment.
 
-### Ibis and IbisDataset
+I usually use Kedro on my DS&ML projects because it provides a well-organized project structure, modular and reusable code, and efficient pipeline management. It centralises data and configuration management, which simplifies deployment and maintenance of models. Kedro enhances reproducibility with version control and scales efficiently by integrating with tools like BigQuery. Overall, Kedro streamlines workflows, promotes best MLOps practices, makes collaboration and maintenance easier, and saves a lot of time by eliminating the need to write everything from scratch.
+
+### Why Ibis and IbisDataset
 
 [Ibis](https://ibis-project.org/) is a Python library that provides a pandas-like interface for interacting with SQL-based databases. It allows you to write expressive queries using Python syntax and execute them on the database side, leveraging the performance and scalability of the database.
 
 [IbisDataset](https://github.com/kedro-org/kedro-plugins/tree/main/kedro-datasets/kedro_datasets/ibis) is an integration of Ibis within Kedro that allows you to use Ibis expressions as part of your Kedro pipelines. This means you can define your SQL logic within your Kedro project and execute it on databases like Google BigQuery.
 
-### Implementation Steps
+By combining Ibis and IbisDataset, you can easily integrate SQL processing into your Python Machine Learning pipeline while benefiting from version control for your pipeline. Additionally, you can switch between different databases without changing the data processing code, even if the databases use different versions of SQL.
 
-Here's how I implemented this solution in my Kedro project using Google Trends data from Google public datasets:
+### Task description
 
-1. I logged into my Google Cloud account and navigated to the BigQuery service, where I wanted to use data stored in two public tables: `bigquery-public-data.google_trends.international_top_terms` (containing the history of trend rankings) and `bigquery-public-data.google_trends.international_top_rising_terms` (containing additional information about rising trends). Both tables are quite large, with around 200 million rows each. I aim to use this data to build a model to predict future trends. However, before training the model, I decided to preprocess the data with several common steps: grouping with aggregates, filtering, transforming, and merging datasets. I wrote an SQL query to accomplish this::
+I plan to use Google Trends data from the public datasets available in BigQuery to develop a model for predicting future trends.
+
+First, I logged into my Google Cloud account and navigated to the BigQuery service. My focus was on two public tables: `bigquery-public-data.google_trends.international_top_terms` (containing the history of trend rankings) and `bigquery-public-data.google_trends.international_top_rising_terms` (containing additional information about rising trends). Both tables are quite large, with around 200 million rows each.  
+
+Before training the model, I decided to preprocess the data with several common steps: grouping with aggregates, filtering, transforming, and merging datasets. I wrote an SQL query to accomplish this:
 ```sql
 SELECT 
   trends.country_name, 
@@ -63,21 +69,23 @@ ON
   AND trends.term = rising_trends.term 
   AND trends.country_name = rising_trends.country_name
 ```
-2. I could store that SQL query as a database view and use the view name in my Kedro Python project to access the preprocessed data. This approach allows you to preprocess data on the database engine, but it has a few drawbacks: you need permissions to create database objects, and you can't control the future of that view—meaning no version control with Git, and someone could change or accidentally remove it. Therefore, I decided to use Ibis and IbisDataset to replicate the same SQL query within my Kedro project.
-3. I opened my Python code IDE and created a new Kedro project, along with installing the required packages:
+I could store that SQL query as a database view and use the view name in my Kedro Python project to access the preprocessed data. This approach allows you to preprocess data on the database engine, but it has a few drawbacks: you need permissions to create database objects, and you can't control the future of that view—meaning no version control with Git, and someone could change or accidentally remove it. Therefore, I decided to use Ibis and IbisDataset to replicate the same SQL query within my Kedro project.
+
+### Implementation Steps
+
+1. I opened my Python code IDE and created a new Kedro project, along with installing the required packages:
 ```
-pip install kedro
-pip install ibis-framework[bigquery]
+pip install kedro ibis-framework[bigquery]
 kedro new
 ```
 I named my project `kedro-ibis-bigquery`, answered all the other questions with the default options, and received a `kedro-ibis-bigquery` folder containing an empty Kedro project.
 
-4. I created a new empty Kedro pipeline using the following command:
+2. I created a new empty Kedro pipeline using the following command:
 ```
 kedro pipeline create data_processing
 ```
-5. Then I navigated to folder `kedro-ibis-bigquery` and edited a few files:
-#### `/conf/base/catalog.yml`
+3. Then I navigated to folder `kedro-ibis-bigquery` and edited a few files:
+#### `conf/base/catalog.yml`
 This is the Kedro Data Catalog where I need to set all my Dataset descriptions. I'm describing two BigQuery tables with the type `ibis.TableDataset` and connection backend specification. The `project_id: aesthetic-site-421415` is the name of my personal Google Cloud Project (where query execution will be performed), and `dataset_id` is the database and schema name.
 ```yaml
 international_top_terms:
@@ -102,7 +110,7 @@ preprocessed_data:
 ```
 I want the preprocessed data to be stored in my local file system in CSV format, rather than being returned to the database. Therefore, I'm using `pandas.CSVDataset` for that.
 
-#### `/src/kedro_ibis_bigquery/pipelines/data_processing/nodes.py`
+#### `src/kedro_ibis_bigquery/pipelines/data_processing/nodes.py`
 Here I described my `data_processing` function, which contains Python code written using the Ibis library syntax (similar to Pandas). This function fully replicates the SQL query we saw earlier.
 ```python
 import ibis
@@ -141,7 +149,7 @@ def data_processing(itt, itrt):
 The result object is an `ibis.TableDataset`. I want it to be saved as a CSV later, so I converted it to a pandas DataFrame.
 
 
-#### `/src/kedro_ibis_bigquery/pipelines/data_processing/pipeline.py`
+#### `src/kedro_ibis_bigquery/pipelines/data_processing/pipeline.py`
 Here I created a Kedro pipeline consisting of one node, which includes the previously described `data_processing` function. The pipeline has two inputs from BigQuery and one output to a CSV, as described in the DataCatalog.
 ```python
 from kedro.pipeline import Pipeline, pipeline, node
@@ -159,7 +167,7 @@ def create_pipeline(**kwargs) -> Pipeline:
     ])
 ```
 
-5. Now I can run the `kedro run` command to execute my pipeline. This will preprocess the dataset, store it in my local directory, and allow me to continue developing my Kedro ML pipeline with the model training part. The data preprocessing is executed on the database engine, and all my SQL queries are saved within my Python pipeline.
+4. Now I can run the `kedro run` command to execute my pipeline. This will preprocess the dataset, store it in my local directory, and allow me to continue developing my Kedro ML pipeline with the model training part. The data preprocessing is executed on the database engine, and all my SQL queries are saved within my Python pipeline.
 
 ### Benefits
 - **Centralized Code Management**: All pipeline code, including SQL queries, is stored and managed within your Kedro project.
