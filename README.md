@@ -14,7 +14,7 @@ When managing ML pipelines, especially with large datasets stored on Google BigQ
 
 [Kedro](https://kedro.org/) is a platform-agnostic open-source Python framework for creating reproducible, maintainable, and modular data science code. It helps in managing the entire lifecycle of your ML projects, from data ingestion to model training and deployment.
 
-I usually use Kedro on my DS&ML projects because it provides a well-organized project structure, modular and reusable code, and efficient pipeline management. It centralises data and configuration management, which simplifies deployment and maintenance of models. Kedro enhances reproducibility with version control and scales efficiently by integrating with tools like BigQuery. Overall, Kedro streamlines workflows, promotes best MLOps practices, makes collaboration and maintenance easier, and saves a lot of time by eliminating the need to write everything from scratch.
+I usually use Kedro on my DS&ML projects because it provides a well-organized project structure, modular and reusable code, and efficient pipeline management. It centralises data and configuration management, which simplifies deployment and maintenance of models. Overall, Kedro streamlines workflows, promotes best MLOps practices, makes collaboration and maintenance easier, and saves a lot of time by eliminating the need to write everything from scratch.
 
 ### Why Ibis and IbisDataset
 
@@ -73,17 +73,19 @@ I could store that SQL query as a database view and use the view name in my Kedr
 
 ### Implementation Steps
 
-1. I opened my Python code IDE and created a new Kedro project, along with installing the required packages:
+1. I opened my Python code IDE and created a new python Kedro Data Science project, along with installing the required packages:
 ```
 pip install kedro ibis-framework[bigquery]
 kedro new
 ```
-I named my project `kedro-ibis-bigquery`, answered all the other questions with the default options, and received a `kedro-ibis-bigquery` folder containing an empty Kedro project.
+I named my project `kedro-ibis-bigquery`, answered all the other questions with the default options, and received a `kedro-ibis-bigquery` folder containing an empty [default Kedro project](https://docs.kedro.org/en/stable/get_started/kedro_concepts.html#kedro-project-directory-structure). This folder includes template folders and files for project configuration, data, source code, project metadata in `pyproject.toml`, and a description in `README.md`. Additionally, when creating a new project, there were options to add default linting, docs, and testing tools, which help maintain the project according to best Software Development practices.
 
 2. I created a new empty Kedro pipeline using the following command:
 ```
 kedro pipeline create data_processing
 ```
+A [Kedro pipeline](https://docs.kedro.org/en/stable/get_started/kedro_concepts.html#pipeline) is a sequence of nodes (Python functions) that are executed as part of the pipeline. In my DS and ML projects, I typically create several pipelines such as `data_processing`, `model_training`, and `model_evaluation`. In Kedro, pipelines and nodes are stored in the `src/kedro_ibis_bigquery/pipelines/pipeline_name/` folders.
+
 3. Then I navigated to folder `kedro-ibis-bigquery` and edited a few files:
 #### `conf/base/catalog.yml`
 This is the Kedro Data Catalog where I need to set all my Dataset descriptions. I'm describing two BigQuery tables with the type `ibis.TableDataset` and connection backend specification. The `project_id: aesthetic-site-421415` is the name of my personal Google Cloud Project (where query execution will be performed), and `dataset_id` is the database and schema name.
