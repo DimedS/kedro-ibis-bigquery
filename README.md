@@ -1,6 +1,6 @@
 # Streamlining SQL Data Processing in Kedro ML Pipelines with Ibis and Google BigQuery
 
-In this post, I'd like to share how I'm using Kedro to manage Machine Learning (ML) pipelines while efficiently storing and executing SQL queries within my Python Kedro project. By integrating Ibis via the Ibis table dataset [[NOTE(deepyaman): Wherever you write IbisDataset, I think it should either be Ibis table dataset or `ibis.TableDataset`, or even Ibis dataset.]](), I'm able to keep all my SQL code within the Kedro project and execute it on the database side, specifically using Google BigQuery.
+In this post, I'd like to share how I'm using Kedro to manage Machine Learning (ML) pipelines while efficiently storing and executing SQL queries within my Python Kedro project. By integrating Ibis via the Kedro Ibis table dataset, I'm able to keep all my SQL code within the Kedro project and execute it on the database side, specifically using Google BigQuery.
 
 ## The Challenge
 
@@ -16,13 +16,13 @@ When managing ML pipelines, especially with large datasets stored on Google BigQ
 
 I usually use Kedro on my DS&ML projects because it provides a well-organized project structure, modular and reusable code, and efficient pipeline management. It centralises data and configuration management, which simplifies deployment and maintenance of models. Overall, Kedro streamlines workflows, promotes best MLOps practices, makes collaboration and maintenance easier, and saves a lot of time by eliminating the need to write everything from scratch.
 
-### Why Ibis and IbisDataset
+### Why Ibis and Ibis table dataset
 
 [Ibis](https://ibis-project.org/) is a Python library that provides a pandas-like interface for interacting with SQL-based databases. It allows you to write expressive queries using Python syntax and execute them on the database side, leveraging the performance and scalability of the database.
 
 [`ibis.TableDataset`](https://docs.kedro.org/projects/kedro-datasets/en/latest/api/kedro_datasets.ibis.TableDataset.html) allows you to use Ibis expressions as part of your Kedro pipelines. This means you can define your database logic within your Kedro project and execute it on backends like Google BigQuery.
 
-By combining Ibis and the table dataset, you can easily integrate SQL processing into your Python Machine Learning [[NOTE(deepyaman): As a side note, I would capitalize less stuff, but I'll let whoever is editing the content for the website have the final say on things like this.]]() pipeline while benefiting from version control for your pipeline. Additionally, you can switch between different databases without changing the data processing code, even if the databases use different versions of SQL.
+By combining Ibis and the Kedro Ibis table dataset, you can easily integrate SQL processing into your Python Machine Learning pipeline while benefiting from version control for your pipeline. Additionally, you can switch between different databases without changing the data processing code, even if the databases use different versions of SQL.
 
 ### Task description
 
@@ -69,7 +69,10 @@ ON
   AND trends.term = rising_trends.term 
   AND trends.country_name = rising_trends.country_name
 ```
-I could store that SQL query as a database view and use the view name in my Kedro Python project to access the preprocessed data. This approach allows you to preprocess data on the database engine, but it has a few drawbacks: you need permissions to create database objects, and you can't control the future of that view—meaning no version control with Git, and someone could change or accidentally remove it [[NOTE(deepyaman): Maybe make this into a list? The second point is a bit long.]](). Therefore, I decided to use Ibis with the table dataset to replicate the same SQL query in pure Python within my Kedro project.
+I could store that SQL query as a database view and use the view name in my Kedro Python project to access the preprocessed data. This approach allows you to preprocess data on the database engine, but it has a few drawbacks: 
+- you need permissions to create database objects
+- you can't control the future of that view—meaning no version control with Git, and someone could change or accidentally remove it.
+Therefore, I decided to use Ibis with the table dataset to replicate the same SQL query in pure Python within my Kedro project.
 
 ### Implementation Steps
 
@@ -78,7 +81,7 @@ I could store that SQL query as a database view and use the view name in my Kedr
 pip install kedro ibis-framework[bigquery]
 kedro new
 ```
-I named my project `kedro-ibis-bigquery`, answered all the other questions with the default options, and received a `kedro-ibis-bigquery` folder containing an empty [default Kedro project](https://docs.kedro.org/en/stable/get_started/kedro_concepts.html#kedro-project-directory-structure). This folder includes template folders and files for project configuration, data, source code, project metadata in `pyproject.toml`, and a description in `README.md`. Additionally, when creating a new project, there were options to add default linting, docs, and testing tools, which help maintain the project according to best software development practices. [[NOTE(deepyaman): Some more recommendations on capitalization; again, not doing a full job of this.]]()
+I named my project `kedro-ibis-bigquery`, answered all the other questions with the default options, and received a `kedro-ibis-bigquery` folder containing an empty [default Kedro project](https://docs.kedro.org/en/stable/get_started/kedro_concepts.html#kedro-project-directory-structure). This folder includes template folders and files for project configuration, data, source code, project metadata in `pyproject.toml`, and a description in `README.md`. Additionally, when creating a new project, there were options to add default linting, docs, and testing tools, which help maintain the project according to best software development practices.
 
 2. I created a new empty Kedro pipeline using the following command:
 ```
@@ -113,7 +116,7 @@ preprocessed_data:
 I want the preprocessed data to be stored in my local file system in CSV format, rather than being returned to the database. Therefore, I'm using `pandas.CSVDataset` for that.
 
 #### `src/kedro_ibis_bigquery/pipelines/data_processing/nodes.py`
-Here I described my `data_processing` function, which contains Python code written using the Ibis library syntax (similar to Pandas [[NOTE(deepyaman): If you anticipate any R users, it's apparently quite inspired by `dplyr` (https://ibis-project.org/tutorials/ibis-for-dplyr-users), but maybe there's no need to mention this if you don't anticipate much people with R backend.]]()). This function fully replicates the SQL query we saw earlier.
+Here I described my `data_processing` function, which contains Python code written using the Ibis library syntax (similar to Pandas in Python or dplyr in R). This function fully replicates the SQL query we saw earlier.
 ```python
 import ibis
 
@@ -148,8 +151,7 @@ def data_processing(itt, itrt):
 
     return result.to_pandas()
 ```
-The result object is an `ibis.TableDataset`. I want it to be saved as a CSV later, so I converted it to a pandas DataFrame. [[NOTE(deepyaman): I don't know what's the best way to do this, or if you even want to show it, but you of course don't need to write each output to pandas/CSV, and Ibis is lazy by default. Just a thought, but maybe this is simple and fine and good as is, since the goal is to show how you can port a SQL node to Python/Ibis.]]()
-
+The result object is an `ibis.TableDataset`. I want it to be saved as a CSV later, so I converted it to a pandas DataFrame.
 
 #### `src/kedro_ibis_bigquery/pipelines/data_processing/pipeline.py`
 Here I created a Kedro pipeline consisting of one node, which includes the previously described `data_processing` function. The pipeline has two inputs from BigQuery and one output to a CSV, as described in the DataCatalog.
@@ -180,4 +182,4 @@ def create_pipeline(**kwargs) -> Pipeline:
 
 By integrating Ibis with Kedro, I was able to create a scalable and maintainable solution for managing ML pipelines that include SQL query execution. This approach keeps all code centralized within the Kedro project, allowing for better version control and collaboration. If you're facing similar challenges, I highly recommend exploring the combination of Kedro, Ibis, and `ibis.TableDataset`.
 
-Feel free to reach out if you have any questions or need further details on the implementation! [[NOTE(deepyaman): Looking great overall! Most of the notes are around use of "IbisDataset"; other than that, feel free to integrate some of the feedback or not, depending on the message you're trying to send.]]()
+Feel free to reach out if you have any questions or need further details on the implementation!
