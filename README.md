@@ -177,9 +177,12 @@ def create_pipeline(**kwargs) -> Pipeline:
 - **Centralized Code Management**: All pipeline code, including SQL queries, is stored and managed within your Kedro project.
 - **Scalability**: By executing SQL queries on Google BigQuery, you leverage its scalability and performance.
 - **Reproducibility**: Kedro ensures that your ML pipelines are reproducible, making it easier to share and collaborate with others.
+- **Flexibility**: Ibis allows you to easily switch between database engines and backends without needing to rewrite SQL code, simply by changing the connection backend option.
 
 ### Conclusion
 
-By integrating Ibis with Kedro, I was able to create a scalable and maintainable solution for managing ML pipelines that include SQL query execution. This approach keeps all code centralized within the Kedro project, allowing for better version control and collaboration. If you're facing similar challenges, I highly recommend exploring the combination of Kedro, Ibis, and `ibis.TableDataset`.
+By integrating Ibis with Kedro, I was able to create a scalable and maintainable solution for managing ML pipelines that include SQL query execution. This approach keeps all code centralised within the Kedro project, allowing for better version control and collaboration. If you're facing similar challenges, I highly recommend exploring the combination of Kedro, Ibis, and `ibis.TableDataset`.
 
-Feel free to reach out if you have any questions or need further details on the implementation!
+Feel free to reach out if you have any questions or need further details on the implementation. You can contact me via Slack or Telegram. [Slack](https://kedro-org.slack.com/team/U05515LHK2R) or [Telegram](https://t.me/dimed).
+
+Dmitry Sorokin, Senior ML Engineer
